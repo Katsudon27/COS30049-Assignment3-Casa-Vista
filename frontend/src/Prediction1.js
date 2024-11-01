@@ -83,43 +83,6 @@ function Prediction1() {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: darkMode ? '#333' : '#F7F2EB', color: darkMode ? '#fff' : '#333' }}>
-      <AppBar position="static" sx={{ bgcolor: '#081F5C' }}>
-        <Toolbar sx={{ justifyContent: 'space-between' }}>
-          <IconButton edge="start" color="inherit" aria-label="menu" onClick={toggleDrawer(true)}>
-            <MenuIcon />
-          </IconButton>
-          <Box sx={{ display: 'flex', gap: 3 }}>
-            <Button color="inherit">Home</Button>
-            <Button color="inherit">Classification</Button>
-            <Button color="inherit">Prediction 1</Button>
-            <Button color="inherit">Prediction 2</Button>
-          </Box>
-          <Button color="inherit">Contact</Button>
-        </Toolbar>
-      </AppBar>
-
-      <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer(false)}>
-        <Box sx={{ width: 250 }} role="presentation" onClick={toggleDrawer(false)} onKeyDown={toggleDrawer(false)}>
-          <List>
-            {['Home', 'About', 'Contact'].map((text, index) => (
-              <ListItem button key={text}>
-                <ListItemIcon>
-                  {index === 0 ? <HomeIcon /> : index === 1 ? <InfoIcon /> : <MailIcon />}
-                </ListItemIcon>
-                <ListItemText primary={text} />
-              </ListItem>
-            ))}
-          </List>
-          <Divider />
-          <List>
-            <ListItem>
-              <ListItemText primary="Dark Mode" />
-              <Switch checked={darkMode} onChange={handleDarkModeToggle} />
-            </ListItem>
-          </List>
-        </Box>
-      </Drawer>
-
       <Container component="main" sx={{ mt: 2, mb: 2, flex: 1 }}>
         <Box sx={{ mb: 4, textAlign: 'center' }}>
           <img
@@ -242,16 +205,6 @@ function Prediction1() {
           {renderChart()}
         </Box>
       </Container>
-
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity="success" sx={{ width: '100%' }}>
-          Dark Mode {darkMode ? 'Enabled' : 'Disabled'}
-        </Alert>
-      </Snackbar>
-
-      <Box component="footer" sx={{ p: 2, mt: 'auto', bgcolor: '#081F5C', color: '#fff', textAlign: 'center' }}>
-        <Typography variant="body1">© Team H&M 2024</Typography>
-      </Box>
     </Box>
   );
 }
