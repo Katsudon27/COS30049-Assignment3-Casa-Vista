@@ -1,209 +1,168 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect} from 'react';
 import axios from 'axios';
 import {
   AppBar, Toolbar, Typography, Container, Box,
   Drawer, List, ListItem, ListItemIcon, ListItemText, IconButton, Switch, Snackbar,
   Alert, FormControl, FormLabel, Radio, RadioGroup, FormControlLabel, Divider, Select, MenuItem, Button
 } from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Home as HomeIcon,
-  Info as InfoIcon,
-  Mail as MailIcon,
-} from '@mui/icons-material';
+import * as d3 from 'd3';
+
 
 function Classification() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [chartType, setChartType] = useState(null);
-  const [formVisible, setFormVisible] = useState(true);
-  const [predictionDetailsVisible, setPredictionDetailsVisible] = useState(false);
-  const [location, setLocation] = useState('');
-  const [houseType, setHouseType] = useState('');
-  const [error, setError] = useState('');
-  const [predictedPrice, setPredictedPrice] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const chartRef = useRef(null);
-
-  const toggleDrawer = (open) => (event) => {
-    if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
-      return;
-    }
-    setDrawerOpen(open);
+  const [selectedColumn, setSelectedColumn] = useState('');
+  const [clusterColumn, setClusterColumn] = useState('');
+  const [clusterData, setClusterData] = useState(null);  // State to store clustering data
+  const [error, setError] = useState(null);
+  const chartRef = useRef(null); 
+  
+  const handleChange = (event) => {
+    setSelectedColumn(event.target.value);
   };
 
-  const handleDarkModeToggle = () => {
-    setDarkMode(!darkMode);
-    setSnackbarOpen(true);
-  };
-
-  const handleSnackbarClose = (event, reason) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    setSnackbarOpen(false);
-  };
-
-  const handleChartSelection = (event) => {
-    setChartType(event.target.value);
-    chartRef.current.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handlePredictionDetailsSubmit = async (e) => {
+  const handleClusteringColumnSubmit = async (e) => {
     e.preventDefault();
-    setPredictionDetailsVisible(true);
-    setFormVisible(false);
-    setLoading(true);
-
-    try {
-      // Axios call to predict house price based on region and house type
-      const response = await axios.get(`http://localhost:8000/predict/${location}/${houseType}`);
-      setPredictedPrice(response.data.predicted_price);
-    } catch (err) {
-      setError('Error predicting price. Please try again.');
-      console.error(err);
-    } finally {
-      setLoading(false);
+    try{
+        const response = await axios.post('http://localhost:8000/cluster', {column: selectedColumn});
+    
+        setClusterData(response.data.data);
+        setClusterColumn(response.data.selected_column);
+    }catch (err) {
+        setError('Error predicting price. Please try again.');
+        console.error(err);
     }
   };
 
-  const renderChart = () => {
-    switch (chartType) {
-      case 'line':
-        return <Typography variant="h4" color={darkMode ? '#fff' : '#333'}>Line Chart for Housing Price Prediction</Typography>;
-      case 'bar':
-        return <Typography variant="h4" color={darkMode ? '#fff' : '#333'}>Bar Chart for Housing Price Prediction</Typography>;
-      case 'pie':
-        return <Typography variant="h4" color={darkMode ? '#fff' : '#333'}>Pie Chart for Housing Price Prediction</Typography>;
-      default:
-        return <Typography variant="h6" color={darkMode ? '#fff' : '#333'}>Please select a chart type.</Typography>;
+  useEffect(() => {
+    if (clusterData) {
+      renderD3Chart();
     }
+  }, [clusterData]);
+
+  const renderD3Chart = () => {
+    // Clear previous chart if it exists
+    d3.select(chartRef.current).selectAll("*").remove();
+
+    // Set up SVG dimensions and margins
+    const margin = { top: 20, right: 100, bottom: 40, left: 50 };
+    const width = 600 - margin.left - margin.right;
+    const height = 400 - margin.top - margin.bottom;
+
+    // Create SVG element
+    const svg = d3.select(chartRef.current)
+      .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+      .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    // Set up scales based on data
+    const x = d3.scaleLinear()
+      .domain(d3.extent(clusterData, d => d[clusterColumn])).nice()
+      .range([0, width]);
+
+    const y = d3.scaleLinear()
+      .domain(d3.extent(clusterData, d => d.Price)).nice()
+      .range([height, 0]);
+
+    // Set up color scale for clusters
+    const color = d3.scaleOrdinal(d3.schemeCategory10)
+      .domain([...new Set(clusterData.map(d => d.ClusterLabel))]);
+
+    // Add X axis
+    svg.append("g")
+      .attr("transform", `translate(0,${height})`)
+      .call(d3.axisBottom(x))
+      .append("text")
+      .attr("x", width)
+      .attr("y", -10)
+      .attr("fill", "currentColor")
+      .style("text-anchor", "end")
+      .text(clusterColumn);
+
+    // Add Y axis
+    svg.append("g")
+      .call(d3.axisLeft(y))
+      .append("text")
+      .attr("x", -10)
+      .attr("y", 10)
+      .attr("fill", "currentColor")
+      .style("text-anchor", "end")
+      .text("Price");
+
+    // Add points
+    svg.selectAll("circle")
+      .data(clusterData)
+      .enter()
+      .append("circle")
+      .attr("cx", d => x(d[clusterColumn]))
+      .attr("cy", d => y(d.Price))
+      .attr("r", 5)
+      .attr("fill", d => color(d.ClusterLabel))
+      .attr("opacity", 0.7);
+
+    // Optional: Add legend
+    const legend = svg.selectAll(".legend")
+      .data(color.domain())
+      .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", (d, i) => `translate(${width + 30},${i * 20})`);
+
+    legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+    legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(d => `Cluster ${d}`);
   };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: darkMode ? '#333' : '#F7F2EB', color: darkMode ? '#fff' : '#333' }}>
       <Container component="main" sx={{ mt: 2, mb: 2, flex: 1 }}>
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <img
-            src="/housing.jpg"
-            alt="Housing"
-            style={{
-              width: '100%',
-              maxHeight: '300px',
-              objectFit: 'contain',
-              borderRadius: '8px'
-            }}
-          />
-        </Box>
-
-        {formVisible && (
           <Box sx={{ mb: 4, backgroundColor: darkMode ? '#fff' : '#F7F2EB', p: 2, borderRadius: 1 }}>
             <Typography variant="h5" component="h2" gutterBottom color={darkMode ? '#333' : '#333'}>
-              Enter Prediction Details
+              Enter Clustering Details
             </Typography>
 
             <FormControl fullWidth margin="normal">
-              <FormLabel color={darkMode ? '#333' : '#333'}>Region</FormLabel>
+              <FormLabel color={darkMode ? '#333' : '#333'}>Column to be compared with House Price</FormLabel>
               <Select
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                value={selectedColumn}
+                onChange={handleChange}
                 displayEmpty>
-                <MenuItem value="" disabled>Select Region</MenuItem>
-                <MenuItem value="All Regions">All Regions</MenuItem>
-                <MenuItem value="Northern Metropolitan">Northern Metropolitan</MenuItem>
-                <MenuItem value="Eastern Metropolitan">Eastern Metropolitan</MenuItem>
-                <MenuItem value="Southern Metropolitan">Southern Metropolitan</MenuItem>
-                <MenuItem value="Western Metropolitan">Western Metropolitan</MenuItem>
-                <MenuItem value="South-Eastern Metropolitan">South-Eastern Metropolitan</MenuItem>
-                <MenuItem value="Northern Victoria">Northern Victoria</MenuItem>
-                <MenuItem value="Eastern Victoria">Eastern Victoria</MenuItem>
-                <MenuItem value="Western Victoria">Western Victoria</MenuItem>
-              </Select>
-            </FormControl>
-
-            <FormControl fullWidth margin="normal">
-              <FormLabel color={darkMode ? '#333' : '#333'}>Type of House</FormLabel>
-              <Select
-                value={houseType}
-                onChange={(e) => setHouseType(e.target.value)}
-                displayEmpty
-              >
-                <MenuItem value="" disabled>Select House Type</MenuItem>
-                <MenuItem value="Unit">Apartment</MenuItem>
-                <MenuItem value="House">House</MenuItem>
-                <MenuItem value="Townhouse">Townhouse</MenuItem>
+                <MenuItem value="" disabled>Select Column</MenuItem>
+                <MenuItem value="NR">No. of Rooms</MenuItem>
+                <MenuItem value="D">Distance from CBD</MenuItem>
+                <MenuItem value="NS">No. of Properties in Suburb</MenuItem>
+                <MenuItem value="TP">Total Population</MenuItem>
               </Select>
             </FormControl>
 
             <Button
               variant="contained"
               color="primary"
-              onClick={handlePredictionDetailsSubmit}
-              disabled={!location || !houseType}
+              onClick={handleClusteringColumnSubmit}
             >
               Submit
             </Button>
-          </Box>
-        )}
 
-        {predictionDetailsVisible && (
-          <Button variant="contained" color="primary" onClick={() => {
-            setFormVisible(true);
-            setLocation('');
-            setHouseType('');
-            setPredictionDetailsVisible(false);
-          }} sx={{ mb: 2 }}>
-            Modify Details
-          </Button>
-        )}
-
-        {predictionDetailsVisible && (
-          <Box sx={{ mb: 4, backgroundColor: darkMode ? '#fff' : '#F7F2EB', p: 2, borderRadius: 1 }}>
-            <Typography variant="h5" component="h2" gutterBottom color={darkMode ? '#333' : '#333'}>
-              Choose a Chart Type
-            </Typography>
-            <FormControl component="fieldset">
-              <FormLabel component="legend" sx={{ color: darkMode ? '#333' : '#333' }}>
-                Select a chart for housing price prediction:
-              </FormLabel>
-              <RadioGroup aria-label="chart" name="chart" value={chartType} onChange={handleChartSelection}>
-
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                  <FormControlLabel
-                    value="line"
-                    control={<Radio sx={{ color: darkMode ? '#333' : '#333' }} />}
-                    label={<Typography sx={{ color: darkMode ? '#333' : '#333' }}>Line Chart</Typography>}
-                  />
-                  <FormControlLabel
-                    value="bar"
-                    control={<Radio sx={{ color: darkMode ? '#333' : '#333' }} />}
-                    label={<Typography sx={{ color: darkMode ? '#333' : '#333' }}>Bar Chart</Typography>}
-                  />
-                  <FormControlLabel
-                    value="pie"
-                    control={<Radio sx={{ color: darkMode ? '#333' : '#333' }} />}
-                    label={<Typography sx={{ color: darkMode ? '#333' : '#333' }}>Pie Chart</Typography>}
-                  />
-                </Box>
-              </RadioGroup>
-            </FormControl>
-          </Box>
-        )}
-
-        <Box sx={{ textAlign: 'center', mb: 2 }}>
-          {loading ? (
-            <Typography variant="h6" color={darkMode ? '#fff' : '#333'}>Loading...</Typography>
-          ) : (
-            <Typography variant="h6" color={darkMode ? '#fff' : '#333'}>
-              {predictedPrice !== null && !error ? `Predicted Price: $${predictedPrice}` : error}
+            {error && (
+            <Typography color="error" sx={{ mt: 2 }}>
+              {error}
             </Typography>
           )}
-        </Box>
 
-        <Box ref={chartRef} sx={{ textAlign: 'center' }}>
-          {renderChart()}
-        </Box>
+            <Box sx={{ mt: 4 }}>
+                <div ref={chartRef}></div> {/* D3 chart container */}
+            </Box>
+
+          </Box>
       </Container>
     </Box>
   );
