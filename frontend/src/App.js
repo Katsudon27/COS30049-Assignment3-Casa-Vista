@@ -134,7 +134,17 @@ function App() {
           </Snackbar>
           
           {/* Footer for application */}
-          <footer component="footer" style={{ bottom: 0, position: 'fixed', mt: "auto", width: "100%", backgroundColor: '#081F5C', color: '#fff', textAlign: 'center', padding: '1rem 0' }}>
+          <footer component="footer" 
+          style={{ 
+            bottom: 0, 
+            position: 'fixed', 
+            mt: "auto", 
+            width: "100%", 
+            backgroundColor: '#081F5C', 
+            color: '#fff', 
+            textAlign: 'center', 
+            padding: '1rem 0',
+            zIndex: 10 }}>
             <Typography variant="body2">&copy; Casa Vista by Team H&M 2024</Typography>
           </footer>
         </Box>
