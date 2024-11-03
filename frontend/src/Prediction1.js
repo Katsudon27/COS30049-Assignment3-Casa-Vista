@@ -247,6 +247,10 @@ function Prediction1({darkMode}) {
     canvas.height = height;
     const ctwod = canvas.getContext('2d'); // get the 2d drawing
 
+    // Fill the canvas with a white background before drawing the SVG
+    ctwod.fillStyle = '#FFFFFF'; // Set the desired background color (e.g., white)
+    ctwod.fillRect(0, 0, width, height); // Fill the entire canvas with the background color
+
     const img = new Image(); // create an image element
 
     // create blob using SVG string with SVG image format

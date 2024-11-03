@@ -1,6 +1,9 @@
-import React, { useState, useRef, useEffect} from 'react';
+import React, { useState, useRef, useEffect, useCallback} from 'react';
 import axios from 'axios';
-import { CircularProgress, Box, Card, Grid, Container, Typography, FormControl, FormLabel, Select, MenuItem, Checkbox, FormControlLabel, FormGroup, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { CircularProgress, Box, Card, Grid, Container, Typography, 
+  FormControl, FormLabel, Select, MenuItem, Checkbox, 
+  FormControlLabel, Table, TableBody, TableCell, 
+  TableContainer, TableHead, TableRow, Paper } from '@mui/material';
 import * as d3 from 'd3';
 
 
@@ -24,15 +27,8 @@ function Classification({darkMode}) {
     setSelectedColumn(event.target.value);
   }
 
-  // Fetch data automatically when `selectedColumn` changes
-  useEffect(() => {
-    if (selectedColumn) {
-      fetchData();
-    }
-  }, [selectedColumn]);
-
   // Fetch clustering data from the server
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
 
     //Start loading animation
     setLoading(true);
@@ -59,17 +55,14 @@ function Classification({darkMode}) {
 
     //End the loading animation
     setLoading(false); 
-  };
+  }, [selectedColumn]);
 
-  //Function for running effect when attributes changes
+  // Fetch data automatically when `selectedColumn` changes
   useEffect(() => {
-    // Check if `clusterData` is a non-empty array
-    if (Array.isArray(clusterData) && clusterData.length > 0) {
-
-      // Call function to render or update the chart with the current data
-      renderClusteringChart();
+    if (selectedColumn) {
+      fetchData();
     }
-  }, [clusterData, selectedClusters]);
+  }, [selectedColumn, fetchData]);
 
   //Function for handling the filtering feature 
   const handleClusterCheckboxChange = (event) => {
@@ -86,7 +79,7 @@ function Classification({darkMode}) {
   }
 
   // Function for rendering chart for data visualisation
-  const renderClusteringChart = () => {
+  const renderClusteringChart = useCallback(() => {
     // Clear previous chart 
     d3.select(chartRef.current).selectAll("*").remove();
 
@@ -127,6 +120,16 @@ function Classification({darkMode}) {
     // Set up color scale for clusters
     const color = d3.scaleOrdinal(d3.schemeCategory10)
       .domain([...new Set(clusterData.map(d => d.ClusterLabel))]);
+
+    // Add chart title
+    svg.append("text")
+      .attr("x", width / 2) // Center horizontally
+      .attr("y", -10) // Position above chart
+      .attr("text-anchor", "middle")  // Center text
+      .style("font-size", "16px") // Set font size
+      .style("font-weight", "bold") // Bold font of chart title
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
+      .text("Scatter Plot of Clustered Data");
 
     // Add X axis
     svg.append("g")
@@ -213,7 +216,17 @@ function Classification({darkMode}) {
       .style("text-anchor", "start") // Align text to the start (left)
       .style("font-size", isMobile ? "10px" : "14px")  // Use smaller font on mobile for readability
       .text(d => `Cluster ${d}`); // Display each cluster label
-  };
+  }, [clusterData, selectedClusters, clusterColumn, darkMode, isMobile, isTablet]);
+
+  //Function for running effect when attributes changes
+  useEffect(() => {
+    // Check if `clusterData` is a non-empty array
+    if (Array.isArray(clusterData) && clusterData.length > 0) {
+
+      // Call function to render or update the chart with the current data
+      renderClusteringChart();
+    }
+  }, [clusterData, selectedClusters, renderClusteringChart]);
 
   return (
     // Main container with flex layout and conditional styling based on dark mode
