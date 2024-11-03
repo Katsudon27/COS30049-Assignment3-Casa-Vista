@@ -36,3 +36,29 @@
     transform: rotate(360deg);
   }
 }
+
+/* Initial state when the component begins entering */
+.transition-enter {
+  opacity: 0; /* Start with full transparency */
+  transform: translateX(10%); /* Offset slightly to the right */
+}
+
+/* Active state when the component is entering */
+.transition-enter-active {
+  opacity: 1; /* Fade to fully opaque */
+  transform: translateX(0); /* Slide to the final position */
+  transition: opacity 300ms ease-in-out, transform 300ms ease-in-out; /* Smooth transition for both opacity and position */
+}
+
+/* Initial state when the component begins exiting */
+.transition-exit {
+  opacity: 1; /* Start with full opacity */
+  transform: translateX(0); /* Start animation from its original position */
+}
+
+/* Active state when the component is exiting */
+.transition-exit-active {
+  opacity: 0; /* Fade to fully transparent */
+  transform: translateX(-10%); /* Slide slightly to the left */
+  transition: opacity 300ms ease-in-out, transform 300ms ease-in-out; /* Smooth transition for both opacity and position */
+}

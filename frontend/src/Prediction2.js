@@ -11,6 +11,7 @@ function Prediction2({darkMode}) {
   const [region, setRegion] = useState(''); // Holds selected region for predictions
   const [houseType, setHouseType] = useState(''); // Holds selected property type for predictions
   const chartRef = useRef(null);  // Reference for the chart container
+  const [isChartVisible, setIsChartVisible] = useState(false); // Tracks the visibility of the chart
 
   // Fetch training data from the server
   const fetchTrainingData = async () => {
@@ -68,6 +69,7 @@ const handlePredictionDetailsSubmit = async (e) => {
   e.preventDefault(); // Prevent default form submission
   setPredictionDetailsVisible(true);  // Show prediction details
   setFormVisible(false);  // Hide form after filling the form
+  setIsChartVisible(true);
 
   // Fetch training and prediction data
   const trainingData = await fetchTrainingData();
@@ -226,6 +228,7 @@ const drawChart = (data) => {
       .attr("text-anchor", "middle")  // Center text
       .style("font-size", "16px") // Set font size
       .style("font-weight", "bold") // Bold font of chart title
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
       .text("Normalized Housing Prices Over Years");
 
   // Add x-axis label
@@ -234,6 +237,7 @@ const drawChart = (data) => {
       .attr("y", height + 35) // Position below x-axis
       .attr("text-anchor", "middle")  // Center text
       .style("font-size", "14px") // Set font size
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
       .text("Year");
 
   // Add y-axis label
@@ -243,6 +247,7 @@ const drawChart = (data) => {
       .attr("x", -height / 2) // Center vertically relative to chart height
       .attr("text-anchor", "middle")  // Center text
       .style("font-size", "14px") // Set font size
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
       .text("Normalized Housing Price");
 };
 
@@ -261,13 +266,14 @@ const handleModifyDetails = () => {
        {/* Place the image and description at the top */}
        <Box sx={{ mb: 4, textAlign: 'center' }}>
           <img
-            src="/housing.jpg"
+            src="/images/housing.jpg"
             alt="Housing"
             style={{
-              width: '100%',
+              width: '90%',          // Full width of the container
+              maxWidth: '500px',       // Limits max width to 500px for larger screens      
               maxHeight: '300px',
-              objectFit: 'contain',
-              borderRadius: '8px'
+              objectFit: 'cover',
+              borderRadius: '12px'
             }}
           />
             {/* Displays the description of the chart */}
@@ -355,10 +361,18 @@ const handleModifyDetails = () => {
           )}
 
           {/* Chart container */}
-          <Box sx={{ pb: 'auto', mx: 'auto', mb: 4, width: '90%', display: 'flex', justifyContent: 'center', }}>
-            <div style={{ overflowX: 'auto', width: '100%', maxWidth: '900px', }}> 
-                <svg ref={chartRef} style={{ width: '800px', height: '400px' }}></svg> 
-            </div>
+          <Box sx={{ pb: 'auto', mx: 'auto', mb: 4, width: '90%', display: 'flex', justifyContent: 'center' }}>
+            {isChartVisible && (
+              <div
+                style={{
+                  overflowX: 'auto', // Only apply overflow if isChartVisible is true
+                  width: '100%',
+                  maxWidth: '900px'
+                }}
+              >
+                <svg ref={chartRef} style={{ width: '800px', height: '400px' }}></svg>
+              </div>
+            )}
           </Box>
 
         </Container>

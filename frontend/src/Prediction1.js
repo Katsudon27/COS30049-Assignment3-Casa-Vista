@@ -120,13 +120,15 @@ function Prediction1({darkMode}) {
       .attr("text-anchor", "middle") // set the title to center
       .style("font-size", "16px") // set the title font sie to 16px
       .style("font-weight", "bold") // set the title font to bold
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
       .text("Line Chart Prediction of Normalized Price over Year"); // this is the title for the line chart
   
     // tooltip for hovering
     const tooltip = d3.select("body").append("div")
       .attr("class", "tooltip")
       .style("position", "absolute") // hover exactly on the dot
-      .style("background-color", "#f9f9f9")
+      .style("background-color", "rgba(0, 0, 0, 0.7)")  // Set tooltip background color
+      .style("color", "white")  // Set text color to white
       .style("border", "1px solid #333")
       .style("padding", "5px")
       .style("border-radius", "4px")
@@ -158,6 +160,7 @@ function Prediction1({darkMode}) {
       .attr("x", width / 2)
       .attr("y", height + margin.bottom - 10)
       .attr("text-anchor", "middle") // place the label in the center of x aixs
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
       .text("Year"); // this is the label for x axis
   
     // add label for y-axis
@@ -167,6 +170,7 @@ function Prediction1({darkMode}) {
       .attr("y", -margin.left + 15)
       .attr("x", -height / 2)
       .attr("text-anchor", "middle") // place the label in the center of y aixs
+      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
       .text("Normalized Price"); // this is the label for y axis
   
     // generate line to connect the dots
@@ -269,15 +273,34 @@ function Prediction1({darkMode}) {
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', bgcolor: darkMode ? '#333' : '#F7F2EB', color: darkMode ? '#fff' : '#333' }}>
       
       {/* Output of Random Forest Line Chart Webpage */}
+      {/* Place the image and description at the top */}
+      <Box sx={{ mt:5, textAlign: 'center' }}>
+          <img
+            src="/images/predict1_home.jpeg"
+            alt="Housing"
+            style={{
+              width: '80%',          // Full width of the container
+              maxWidth: '500px',       // Limits max width to 500px for larger screens
+              maxHeight: '300px',
+              objectFit: 'cover',
+              borderRadius: '12px'
+            }}
+          />
+            {/* Displays the description of the chart */}
+          <Typography 
+            variant="subtitle1" 
+            component="p" 
+            sx={{ mt: 2, fontWeight: 'bold', fontSize: '1.25rem' }} // Adjust fontSize as needed
+          >
+            This is a prediction line chart using Random Forest model
+          </Typography>
+        </Box>
+
       {/* Box division for user input form */}
-      <Box sx={{ mx: "auto", mt: 10, mb: 2, maxWidth: 1000, width: "90%", backgroundColor: '#F7F2EB', p: 2, borderRadius: 1 }}>
+      <Box sx={{ mx: "auto", mt: 4, mb: 2, maxWidth: 1000, width: "90%", backgroundColor: '#F7F2EB', p: 2, borderRadius: 1 }}>
         {/* Title of the user input form */}
         <Typography variant="h5" component="h2" gutterBottom color={darkMode ? '#333' : '#333'}>
           Enter Prediction Details
-        </Typography>
-        {/* Descriptiom of the page */}
-        <Typography variant="h6" component="h2" gutterBottom color={darkMode ? '#333' : '#333'}>
-          This is a prediction line chart using Random Forest model.
         </Typography>
 
         {/* Dropdown for user to select the region variable */}
@@ -328,7 +351,7 @@ function Prediction1({darkMode}) {
             <Box sx={{ pb: 8, mx: "auto", mb: 4, width: "90%", display: "flex", flexDirection: "column", alignItems: "center" }}>
                 {/* enable slide when screen is smaller, center the chart when screen is large */}
                 <div style={{ overflowX: 'auto', width: '100%', maxWidth: "900px" }}> 
-                    <svg ref={chartRef} style={{ backgroundColor: darkMode ? '#F7F2EB' : '#fff', color: "#333", border: "2px solid #081F5C" }}></svg>
+                    <svg ref={chartRef}></svg>
                 </div>
 
                 {/* Download Button */}

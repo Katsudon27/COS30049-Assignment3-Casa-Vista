@@ -7,9 +7,10 @@ from randomForest import RandomForestModel
 from gradientBoosting import GradientBoostingModel
 import pandas as pd
 
+# Initialize the FastAPI app
 app = FastAPI()
 
-# Add CORS middleware
+# Setup CORS middleware to allow request from React app
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"], # URL of React application
@@ -18,21 +19,25 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Initialize the model
+# Initialize the integrated Machine Learning Models
+# Initialize the DBSCAN model for clustering
 try:
     clustering_model = ClusteringModel()
 except Exception as e:
+    # Log and raise exceptions for errors encountered during model initialization
     logger.error("Failed to initialize clustering model:", e)
-    raise HTTPException(status_code=500, detail="Model initialization error")
+    raise HTTPException(status_code=500, detail="Clustering Model initialization error")
 
+# Load the pretrained Random Forest model with the training and testing datasets for price prediction
 try:
     rf_model = RandomForestModel('data/training_dataset.csv', 'data/testing_dataset.csv')
 except Exception as e:
-    logger.error("Failed to initialize clustering model:", e)
-    raise HTTPException(status_code=500, detail="Model initialization error")
+    # Log and raise exceptions for errors encountered during model initialization
+    logger.error("Failed to initialize Random Forest model:", e)
+    raise HTTPException(status_code=500, detail="Random Forest Model initialization error")
 
 
-# Load and prepare data and train the model on startup
+# Load the pretrained Gradient Boosting model with the training and testing datasets for price prediction
 try:
     # Load training and testing data for the model
     gb_model = GradientBoostingModel()
@@ -42,44 +47,51 @@ try:
     )
     gb_model.train()  # Fit and train the model on the training data
 except Exception as e:
-    # Print any errors encountered during loading or training data
-    print(f"Error loading data and training model: {e}")
+    # Log and raise exceptions for errors encountered during model initialization
+    logger.error("Failed to initialize Gradient Boosting model:", e)
+    raise HTTPException(status_code=500, detail="Gradient Boosting Model initialization error")
 
-# Load the dataset only once at app start
+# Load the dataset at start-up of application server
 training_dataset = 'data/training_dataset.csv'
 try:
     df = pd.read_csv(training_dataset)
 except FileNotFoundError as e:
+    #Log error and raise exception if the dataset cannot be found
     logger.error("Training dataset not found:", e)
     raise HTTPException(status_code=500, detail="Training Dataset file missing")
 except Exception as e:
     logger.error("Error loading training dataset:", e)
     raise HTTPException(status_code=500, detail="Training Dataset loading error")
 
-# Create Pydantic model for the request
+# Define a Pydantic model to validate and parse input data for prediction
 class PredictionReq(BaseModel):
     region: str
     property_type: str
 
-# Define a Pydantic model to validate and parse input data for prediction
+# Define a Pydantic model to validate and parse input data for clustering
 class ClusteringReq(BaseModel):
-    # Field defines constraints for input validation
-    column: str = Field(..., description="Column to be compared with House Price")
+    column: str 
 
+# API endpoints
+# Root endpoint: Welcome message at the root path for the API
 @app.get("/")
 async def root():
     return {"message": "Welcome to the House Price Prediction API"}
 
-# Prediction endpoint: Retrieve the prediction price
+# Prediction endpoint for Random Forest: Retrieve the prediction price
 @app.post("/predict/")
 async def predict_price_with_body(data: PredictionReq):
     try:
+        # Predict the housing price based on region and property type with Random Forest Model
         price = rf_model.predict(data.region, data.property_type)[0]
+        
+        # Return the predicted price as JSON
         return {"predicted_price": round(price, 2)}
     except Exception as e:
+        #Raise exception if error occurs
         raise HTTPException(status_code=400, detail=str(e))
     
-# History data endpoint: Retrive data from the training dataset based on user input
+# History data endpoint : Retrive data from the training dataset based on user input
 @app.post("/get_year_price/")
 async def get_year_price(data: PredictionReq):
     try:
@@ -110,14 +122,14 @@ async def get_year_price(data: PredictionReq):
         # Raise an HTTP 400 error if there is something wrong
         raise HTTPException(status_code=400, detail=str(e))
 
-# Define a GET endpoint for predicting the housing price based on region and property type
+# Prediction endpoint for Gradient Boosting: Retrieve the prediction price
 @app.get("/predict/{region}/{house_type}")
 async def get_predict_price(region: str, house_type: str):
     try:   
         # Log the user input for debugging purposes     
         print(f"Received prediction request: region='{region}', house_type='{house_type}'")  
         
-        # Predict the housing price based on region and property type
+        # Predict the housing price based on region and property type with Gradient Boosting Model
         predicted_price = gb_model.predict_price(region, house_type)
         
         # Return the predicted price as JSON
@@ -126,46 +138,61 @@ async def get_predict_price(region: str, house_type: str):
     except Exception as e:
         # Log any errors encountered during prediction
         print(f"Error during prediction (GET): {e}")  # Log the error for debugging
+        
         # Raise an HTTP 500 error if the prediction fails
         raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
 
-
+# Clustering endpoint for DBCSAN : Retrieve the prediction price
 @app.post("/cluster")
 async def predict_price(input: ClusteringReq):
-    column = input.column
 
-    # Map column abbreviations to full column names
+    # Map column abbreviations to full column names based on user input
     column_map = {"NR": "No. of Rooms", "D": "Distance from CBD", "NS": "No. of properties in Suburb", "TP": "Total population"}
-    selected_column = column_map.get(column, None)
+    
+    #Convert the column abbreviation from user input to full column name
+    selected_column = column_map.get(input.column, None)
+
+    # Raise an exception if the conversion fails
     if not selected_column:
         raise HTTPException(status_code=400, detail="Invalid column selection")
 
-    # Filter the dataframe to get only Price and the selected column
+    # Filter the data to only keep columns for House Price and the column selected by user
     try:
         df_selected = df[['Price', selected_column]]
     except KeyError as e:
+        # Log and raise an exception if error occurs
         logger.error("Invalid column in dataset:", e)
         raise HTTPException(status_code=500, detail="Invalid column in dataset")
 
     # Perform clustering
     try:
+        #Retrieve clustering labels generated by the model
         labels = clustering_model.cluster(selected_column)
-        df_selected['ClusterLabel'] = labels  # Attach labels to the DataFrame for visualization
+
+        #Add the labels to the filtered dataset as a new column for visualisation
+        df_selected['ClusterLabel'] = labels
+
+        #Generate cluster summary by grouping the filtered dataset by labels and calculate the mean values for each column
         cluster_summary = df_selected.groupby('ClusterLabel').agg({'Price': 'mean', selected_column: 'mean'}).reset_index()
+        
+        #Rename the columns with appropriate naming conventions
         cluster_summary = cluster_summary.rename(columns={
             'Price': 'Mean Price',
             selected_column: 'Mean ' + selected_column
         })
 
     except Exception as e:
+        # Log and raise an exception if error occurs during clustering
         logger.error("Error during clustering:", e)
         raise HTTPException(status_code=500, detail="Clustering error")
 
-    # Convert to JSON format for response
+    # Convert the filtered dataset and cluster summary to a dictionary for response
     data = df_selected.to_dict(orient="records")
     cluster_summary = cluster_summary.to_dict(orient="records")
+
+    # Return the filtered dataset, full name of the selected column and cluster summary as JSON
     return {"data": data, "selected_column": selected_column, "cluster_summary": cluster_summary}
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    import uvicorn # Import Uvicorn for ASGI server to run the FastAPI app
+    uvicorn.run(app, host="0.0.0.0", port=8000) # Run the app on host 0.0.0.0 at port 8000
