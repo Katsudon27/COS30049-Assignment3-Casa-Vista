@@ -121,16 +121,6 @@ function Classification({darkMode}) {
     const color = d3.scaleOrdinal(d3.schemeCategory10)
       .domain([...new Set(clusterData.map(d => d.ClusterLabel))]);
 
-    // Add chart title
-    svg.append("text")
-      .attr("x", width / 2) // Center horizontally
-      .attr("y", -10) // Position above chart
-      .attr("text-anchor", "middle")  // Center text
-      .style("font-size", "16px") // Set font size
-      .style("font-weight", "bold") // Bold font of chart title
-      .style("fill", darkMode ? '#F7F2EB' : '#333') //Adjust font color based on dark mode
-      .text("Scatter Plot of Clustered Data");
-
     // Add X axis
     svg.append("g")
       .attr("transform", `translate(0,${height})`) // Position x-axis at the bottom
