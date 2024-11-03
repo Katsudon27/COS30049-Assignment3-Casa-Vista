@@ -158,39 +158,38 @@ function RoutesWithAnimation({ darkMode, setDarkMode }) {
                 component="main"
                 sx={{
                   position: 'relative',
-                  flexGrow: 1,
-                  height: '100vh',
+                  flexGrow: 1,  // Fill the space
+                  height: '100vh',  // Full height
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'flex-start',
                   justifyContent: 'flex-start',
                   overflow: 'hidden',
-                  backgroundImage: `url('/images/housing_home.jpg')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                  backgroundImage: `url('/images/housing_home.jpg')`, // Background image URL
+                  backgroundSize: 'cover',  // Cover the entire area
+                  backgroundPosition: 'center', // Center the image
                   backgroundRepeat: 'no-repeat',
                   padding: '20px',
-                  paddingLeft: '20px'
+                  paddingLeft: '20px',
                 }}
               >
                 {/* Transparent Box for Text */}
                 <Box
                   sx={{
-                    backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)',
+                    backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.5)' : 'rgba(255, 255, 255, 0.5)', // Transparent background
                     padding: '20px',
-                    borderRadius: '8px',
-                    zIndex: 1,
-                    mb: 4,
-                    marginLeft: 4
+                    borderRadius: '8px', // Rounded corners
+                    zIndex: 1, // Stack above other elements
+                    mb: 4, // Margin at the bottom
                   }}
                 >
                   <Typography
                     variant="h4"
                     component="h1"
                     sx={{
-                      color: '#091F5B',
-                      fontWeight: 'bold',
-                      lineHeight: 1.5,
+                      color: '#091F5B', // Text color
+                      fontWeight: 'bold', // Bold the text
+                      lineHeight: 1.5,  // Line height for spacing
                       whiteSpace: 'pre-line',
                     }}
                   >
@@ -203,15 +202,36 @@ function RoutesWithAnimation({ darkMode, setDarkMode }) {
                     variant="h6"
                     component="p"
                     sx={{
-                      color: '#091F5B',
-                      fontWeight: '500',
-                      lineHeight: 1.4,
+                      color: '#091F5B', // Text color
+                      fontWeight: '500',  // Semi-bold text
+                      lineHeight: 1.4,  // Line height for spacing
                       mt: 2,
                       whiteSpace: 'pre-line',
                     }}
                   >
                     Gain valuable insights into the{"\n"}
                     housing market statistics.
+                  </Typography>
+                </Box>
+
+                {/* Transparent Box for Page Explanations */}
+                <Box
+                  sx={{
+                    backgroundColor: darkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                    padding: '20px',
+                    borderRadius: '8px',
+                    zIndex: 1,
+                    mt: 4, // Margin from the main title section
+                  }}
+                >
+                  <Typography variant="body1" component="p" sx={{ color: darkMode ? '#FFF' : '#091F5B', fontWeight: '400', lineHeight: 1.4, mt: 1 }}>
+                    <strong>Clustering Page:</strong> Displays a scatter plot that shows housing price classifications based on different attributes using the DBSCAN model.
+                  </Typography>
+                  <Typography variant="body1" component="p" sx={{ color: darkMode ? '#FFF' : '#091F5B', fontWeight: '400', lineHeight: 1.4, mt: 1 }}>
+                    <strong>Prediction 1 Page:</strong> Provides housing price predictions for selected regions and property types using a Random Forest model, with results visualized in a line chart.
+                  </Typography>
+                  <Typography variant="body1" component="p" sx={{ color: darkMode ? '#FFF' : '#091F5B', fontWeight: '400', lineHeight: 1.4, mt: 1 }}>
+                    <strong>Prediction 2 Page:</strong> Shows housing price predictions based on selected regions and property types using a Gradient Boosting model, visualized with a bar chart for a detailed view of trends.
                   </Typography>
                 </Box>
 
